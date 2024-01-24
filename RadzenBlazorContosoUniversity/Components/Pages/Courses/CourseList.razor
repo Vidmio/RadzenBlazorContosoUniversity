@@ -1,0 +1,100 @@
+﻿@page "/courses"
+@using RadzenBlazorContosoUniversity.Data
+@using Microsoft.EntityFrameworkCore
+@inject DialogService DialogService
+@inject NotificationService NotificationService
+@inherits RadzenBlazorContosoUniversity.Components.Layout.DBContextPage
+
+<div class="col-12 col-md-6">
+    <RadzenText Text="Courses" TextStyle="TextStyle.H3" TagName="TagName.H1" style="margin: 0" />
+</div>
+<div class="col-12 col-md-6 ">
+    <RadzenButton Icon="add_circle_outline" style="margin-bottom: 10px" Text="Add" Click="@ShowInsertForm" Variant="Variant.Flat" />
+</div>
+
+<RadzenDataGrid @ref="Grid" AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="false" FilterMode="FilterMode.Advanced" AllowSorting="true" PageSize="5" AllowPaging="true" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true"
+                Data="@courses" TItem="Course" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or">
+    <Columns>
+        <RadzenDataGridColumn TItem="Course" Property="CourseID" Filterable="false" Title="ID" Frozen="true" Width="80px" TextAlign="TextAlign.Center" />
+        <RadzenDataGridColumn TItem="Course" Property="Title" Title="Title" Frozen="true" Width="160px" />
+        <RadzenDataGridColumn TItem="Course" Property="Credits" Title="Credits" Width="160px" />
+        <RadzenDataGridColumn TItem="Course" Width="80px" TextAlign="TextAlign.End" Filterable="false" Sortable="false" Pickable="false">
+            <Template Context="course">
+                <RadzenButton ButtonType="ButtonType.Button" ButtonStyle="ButtonStyle.Primary" Icon="edit" Size="ButtonSize.ExtraSmall" Click="@(() => ShowUpdateForm(course))" />
+                <RadzenButton ButtonType="ButtonType.Button" ButtonStyle="ButtonStyle.Secondary" Icon="delete" Size="ButtonSize.ExtraSmall" Click="@(() => Delete(course))" />
+            </Template>
+        </RadzenDataGridColumn>
+    </Columns>
+</RadzenDataGrid>
+
+@code {
+    IEnumerable<Course> courses;
+
+    protected RadzenDataGrid<Course> Grid;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        courses = dbContext.Courses.AsNoTracking();
+    }
+
+    public async Task ShowInsertForm()
+    {
+        dynamic x = await DialogService.OpenAsync<CourseForm>("New");
+        if (x != null && x is bool)
+        {
+            if (x)
+            {
+                NotificationService.Notify(NotificationSeverity.Success, "Uspešno", "Uspešno sačuvan", 5000);
+            }
+            else
+            {
+                NotificationService.Notify(NotificationSeverity.Error, "Greška", "Greška prilikom dodavanja", 5000);
+            }
+        }
+        await Grid.Reload();
+    }
+
+    public async void ShowUpdateForm(Course course)
+    {
+        dynamic x = await DialogService.OpenAsync<CourseForm>("Edit", new Dictionary<string, object>()
+        {
+            {"Id",course.CourseID}
+        });
+        if (x != null && x is bool)
+        {
+            if (x)
+            {
+                NotificationService.Notify(NotificationSeverity.Success, "Uspešno", "Izmene uspešno izvrsene", 5000);
+            }
+            else
+            {
+                NotificationService.Notify(NotificationSeverity.Error, "Greška", "Greška prilikom izmene");
+            }
+        }
+        await Grid.Reload();
+    }
+
+    protected async Task Delete(Course del)
+    {
+        var confirmResult = await DialogService.Confirm("Da li ste sigurni?", "Obriši", new ConfirmOptions() { OkButtonText = "Da", CancelButtonText = "Ne" });
+
+        if (confirmResult.HasValue && confirmResult.Value)
+        {
+            try
+            {
+                dbContext.Remove(del);
+                dbContext.SaveChanges();
+                DialogService.Close(del);
+                NotificationService.Notify(NotificationSeverity.Success, "Uspešno", "Izmene obrisan zapis", 5000);
+            }
+            catch (Exception ex)
+            {
+                dbContext.Entry(courses).State = EntityState.Detached;
+                Console.WriteLine(ex.Message);
+            }
+        }
+        await Grid.Reload();
+    }
+}

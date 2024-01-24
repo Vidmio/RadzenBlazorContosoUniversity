@@ -1,0 +1,101 @@
+﻿@using RadzenBlazorContosoUniversity.Data
+@using Microsoft.EntityFrameworkCore
+@using System.Diagnostics.CodeAnalysis
+@inherits RadzenBlazorContosoUniversity.Components.Layout.DBContextPage
+@inject DialogService DialogService
+@inject NotificationService NotificationService
+
+<RadzenAlert Shade="Shade.Lighter" Variant="Variant.Flat" Size="AlertSize.Small" AlertStyle="AlertStyle.Danger" Visible="@errorVisible">@errorMessage</RadzenAlert>
+
+    <RadzenTemplateForm TItem="Course" Data="@course" Submit="SaveForm">
+        <RadzenFieldset Text="Osnovni podaci">
+            <RadzenRow AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center" RowGap="1rem">
+                <RadzenColumn Size="12" Visible=@IDVisible>
+                    <RadzenFormField Text="ID" Style="width: 100%">
+                        <ChildContent>
+                            <RadzenNumeric Name="IDBox" @bind-Value="course.CourseID" />
+                        </ChildContent>
+                    </RadzenFormField>
+                </RadzenColumn>
+                <RadzenColumn Size="12">
+                    <RadzenFormField Text="Title" Style="width: 100%">
+                        <ChildContent>
+                            <RadzenTextBox Name="ImeTextBox" @bind-Value="course.Title" />
+                        </ChildContent>
+                        <Helper>
+                            <RadzenLengthValidator Component="ImeTextBox" Text="predugačako (max 50 karaktera)" Max="50" />
+                        </Helper>
+                    </RadzenFormField>
+                </RadzenColumn>
+                <RadzenColumn Size="12">
+                    <RadzenFormField Text="Credits" Style="width: 100%">
+                        <ChildContent>
+                            <RadzenNumeric Name="PrezimeTextBox" @bind-Value="course.Credits" />
+                        </ChildContent>
+                        <Helper>
+                            <RadzenNumericRangeValidator Component="PrezimeTextBox" Text="predugačako (max 50 karaktera)" Max="10" />
+                        </Helper>
+                    </RadzenFormField>
+                </RadzenColumn>
+            </RadzenRow>
+        </RadzenFieldset>
+
+        <RadzenRow JustifyContent="JustifyContent.Center" AlignItems="AlignItems.Center" class="rz-mt-4">
+            <RadzenColumn Size="6" class="rz-text-align-end">
+                <RadzenButton ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Primary" Icon="save" Text="Sačuvaj" />
+            </RadzenColumn>
+            <RadzenColumn Size="6" class="rz-text-align-start">
+                <RadzenButton ButtonType="ButtonType.Button" ButtonStyle="ButtonStyle.Light" Icon="cancel" Style="display: inline-block; margin-left: 10px;" Text="Poništi" Click="Close" />
+            </RadzenColumn>
+        </RadzenRow>
+
+    </RadzenTemplateForm>
+
+    @code {
+    [Parameter]
+    public int ID { get; set; }
+    public Course course = new Course();
+    string Title = "Add";
+    protected bool errorVisible;
+    protected string? errorMessage;
+    protected bool IDVisible=true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        if (ID != 0)
+        {
+            Title = "Edit";
+            course = await Task.Run(() => dbContext.Courses.FirstOrDefaultAsync(c => c.CourseID == ID));
+            IDVisible = false;
+        }
+    }
+
+    public async Task SaveForm()
+    {
+        try
+        {
+            if (ID != 0)
+            {
+                dbContext.Courses.Update(course);
+            }
+            else
+            {
+                await dbContext.Courses.AddAsync(course);
+            }
+            await dbContext.SaveChangesAsync();
+            DialogService.Close(true);
+        }
+        catch (Exception ex)
+        {
+            dbContext.Entry(course).State = EntityState.Detached;
+            errorVisible = true;
+            errorMessage = ex.Message + " InnerException: " + ex.InnerException.Message;
+        }
+    }
+
+    public void Close()
+    {
+        DialogService.Close();
+    }
+}
