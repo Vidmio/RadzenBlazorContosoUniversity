@@ -1,5 +1,105 @@
-﻿<h3>EnrollmentList</h3>
+﻿@page "/enrollments"
+@using RadzenBlazorContosoUniversity.Data
+@using Microsoft.EntityFrameworkCore
+@inject DialogService DialogService
+@inject NotificationService NotificationService
+@inherits RadzenBlazorContosoUniversity.Components.Layout.DBContextPage
+
+<div class="col-12 col-md-6">
+    <RadzenText Text="Enrollments" TextStyle="TextStyle.H3" TagName="TagName.H1" style="margin: 0" />
+</div>
+<div class="col-12 col-md-6 ">
+    <RadzenButton Icon="add_circle_outline" style="margin-bottom: 10px" Text="Add" Click="@ShowInsertForm" Variant="Variant.Flat" />
+</div>
+
+<RadzenDataGrid @ref="Grid" AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="false" FilterMode="FilterMode.Advanced" AllowSorting="true" PageSize="10" AllowPaging="true" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true"
+                Data="@enrollments" TItem="Enrollment" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or" AllowVirtualization="true">
+    <Columns>
+        <RadzenDataGridColumn TItem="Enrollment" Property="EnrollmentID" Filterable="false" Title="ID" Frozen="true" Width="80px" TextAlign="TextAlign.Center" />
+        <RadzenDataGridColumn TItem="Enrollment" Property="Course.Title" Title="Course Title" Frozen="true" Width="160px" />
+        <RadzenDataGridColumn TItem="Enrollment"  Title="Student full name">
+            <Template >
+                <RadzenText>@(string.Concat(context.Student.FirstMidName," ",context.Student.LastName))</RadzenText>
+                </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="Enrollment" Property="Grade" Title="Grade" Width="160px" />
+        <RadzenDataGridColumn TItem="Enrollment" Width="80px" TextAlign="TextAlign.End" Filterable="false" Sortable="false" Pickable="false">
+            <Template>
+                <RadzenButton ButtonType="ButtonType.Button" ButtonStyle="ButtonStyle.Primary" Icon="edit" Size="ButtonSize.ExtraSmall" Click="@(() => ShowUpdateForm(context))" />
+                <RadzenButton ButtonType="ButtonType.Button" ButtonStyle="ButtonStyle.Secondary" Icon="delete" Size="ButtonSize.ExtraSmall" Click="@(() => Delete(context))" />
+            </Template>
+        </RadzenDataGridColumn>
+    </Columns>
+</RadzenDataGrid>
 
 @code {
+    IEnumerable<Enrollment> enrollments;
 
+    protected RadzenDataGrid<Enrollment> Grid;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        enrollments = dbContext.Enrollments.Include("Student").Include("Course");
+    }
+
+    public async Task ShowInsertForm()
+    {
+        dynamic x = await DialogService.OpenAsync<EnrollmentForm>("New");
+        if (x != null && x is bool)
+        {
+            if (x)
+            {
+                NotificationService.Notify(NotificationSeverity.Success, "Uspešno", "Uspešno sačuvan", 3000);
+            }
+            else
+            {
+                NotificationService.Notify(NotificationSeverity.Error, "Greška", "Greška prilikom dodavanja", 3000);
+            }
+        }
+        await Grid.Reload();
+    }
+
+    public async void ShowUpdateForm(Enrollment obj)
+    {
+        dynamic x = await DialogService.OpenAsync<EnrollmentForm>("Edit", new Dictionary<string, object>()
+        {
+            {"ID",obj.EnrollmentID}
+        });
+        if (x != null && x is bool)
+        {
+            if (x)
+            {
+                NotificationService.Notify(NotificationSeverity.Success, "Uspešno", "Izmene uspešno izvrsene", 3000);
+            }
+            else
+            {
+                NotificationService.Notify(NotificationSeverity.Error, "Greška", "Greška prilikom izmene");
+            }
+        }
+        await Grid.Reload();
+    }
+
+    protected async Task Delete(Enrollment del)
+    {
+        var confirmResult = await DialogService.Confirm("Da li ste sigurni?", "Obriši", new ConfirmOptions() { OkButtonText = "Da", CancelButtonText = "Ne" });
+
+        if (confirmResult.HasValue && confirmResult.Value)
+        {
+            try
+            {
+                dbContext.Remove(del);
+                dbContext.SaveChanges();
+                DialogService.Close(del);
+                NotificationService.Notify(NotificationSeverity.Success, "Uspešno", "Obrisan zapis", 3000);
+            }
+            catch (Exception ex)
+            {
+                dbContext.Entry(enrollments).State = EntityState.Detached;
+                Console.WriteLine(ex.Message);
+            }
+        }
+        await Grid.Reload();
+    }
 }

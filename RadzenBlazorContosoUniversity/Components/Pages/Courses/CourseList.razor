@@ -19,9 +19,9 @@
         <RadzenDataGridColumn TItem="Course" Property="Title" Title="Title" Frozen="true" Width="160px" />
         <RadzenDataGridColumn TItem="Course" Property="Credits" Title="Credits" Width="160px" />
         <RadzenDataGridColumn TItem="Course" Width="80px" TextAlign="TextAlign.End" Filterable="false" Sortable="false" Pickable="false">
-            <Template Context="course">
-                <RadzenButton ButtonType="ButtonType.Button" ButtonStyle="ButtonStyle.Primary" Icon="edit" Size="ButtonSize.ExtraSmall" Click="@(() => ShowUpdateForm(course))" />
-                <RadzenButton ButtonType="ButtonType.Button" ButtonStyle="ButtonStyle.Secondary" Icon="delete" Size="ButtonSize.ExtraSmall" Click="@(() => Delete(course))" />
+            <Template>
+                <RadzenButton ButtonType="ButtonType.Button" ButtonStyle="ButtonStyle.Primary" Icon="edit" Size="ButtonSize.ExtraSmall" Click="@(() => ShowUpdateForm(context))" />
+                <RadzenButton ButtonType="ButtonType.Button" ButtonStyle="ButtonStyle.Secondary" Icon="delete" Size="ButtonSize.ExtraSmall" Click="@(() => Delete(context))" />
             </Template>
         </RadzenDataGridColumn>
     </Columns>
@@ -46,27 +46,27 @@
         {
             if (x)
             {
-                NotificationService.Notify(NotificationSeverity.Success, "Uspešno", "Uspešno sačuvan", 5000);
+                NotificationService.Notify(NotificationSeverity.Success, "Uspešno", "Uspešno sačuvan", 3000);
             }
             else
             {
-                NotificationService.Notify(NotificationSeverity.Error, "Greška", "Greška prilikom dodavanja", 5000);
+                NotificationService.Notify(NotificationSeverity.Error, "Greška", "Greška prilikom dodavanja", 3000);
             }
         }
         await Grid.Reload();
     }
 
-    public async void ShowUpdateForm(Course course)
+    public async void ShowUpdateForm(Course obj)
     {
         dynamic x = await DialogService.OpenAsync<CourseForm>("Edit", new Dictionary<string, object>()
         {
-            {"Id",course.CourseID}
+            {"Id",obj.CourseID}
         });
         if (x != null && x is bool)
         {
             if (x)
             {
-                NotificationService.Notify(NotificationSeverity.Success, "Uspešno", "Izmene uspešno izvrsene", 5000);
+                NotificationService.Notify(NotificationSeverity.Success, "Uspešno", "Izmene uspešno izvrsene", 3000);
             }
             else
             {

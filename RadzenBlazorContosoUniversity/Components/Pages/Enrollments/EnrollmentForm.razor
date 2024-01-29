@@ -1,5 +1,94 @@
-﻿<h3>EnrollmentForm</h3>
+﻿@using RadzenBlazorContosoUniversity.Data
+@using Microsoft.EntityFrameworkCore
+@using System.Diagnostics.CodeAnalysis
+@inherits RadzenBlazorContosoUniversity.Components.Layout.DBContextPage
+@inject DialogService DialogService
+@inject NotificationService NotificationService
 
-@code {
+<RadzenAlert Shade="Shade.Lighter" Variant="Variant.Flat" Size="AlertSize.Small" AlertStyle="AlertStyle.Danger" Visible="@errorVisible">@errorMessage</RadzenAlert>
 
+    <RadzenTemplateForm TItem="Enrollment" Data="@data" Submit="SaveForm">
+        <RadzenFieldset Text="Osnovni podaci">
+            <RadzenRow AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center" RowGap="1rem">
+                <RadzenColumn Size="12">
+                    <RadzenFormField Text="Student" Style="width: 100%">
+                        <ChildContent>
+                            <RadzenDropDown @bind-Value="@data.StudentID" AllowVirtualization="true" AllowClear="true" Data=@student style="width: 100%;" TextProperty="FirstMidName" ValueProperty="ID" />
+                        </ChildContent>
+                    </RadzenFormField>
+                </RadzenColumn>
+                <RadzenColumn Size="12">
+                    <RadzenFormField Text="Course" Style="width: 100%">
+                        <ChildContent>
+                            <RadzenDropDown @bind-Value="@data.CourseID" AllowVirtualization="true" AllowClear="true" Data=@course style="width: 100%;" TextProperty="Title" ValueProperty="CourseID" />
+                        </ChildContent>
+                    </RadzenFormField>
+                </RadzenColumn>
+            </RadzenRow>
+        </RadzenFieldset>
+
+        <RadzenRow JustifyContent="JustifyContent.Center" AlignItems="AlignItems.Center" class="rz-mt-4">
+            <RadzenColumn Size="6" class="rz-text-align-end">
+                <RadzenButton ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Primary" Icon="save" Text="Sačuvaj" />
+            </RadzenColumn>
+            <RadzenColumn Size="6" class="rz-text-align-start">
+                <RadzenButton ButtonType="ButtonType.Button" ButtonStyle="ButtonStyle.Light" Icon="cancel" Style="display: inline-block; margin-left: 10px;" Text="Poništi" Click="Close" />
+            </RadzenColumn>
+        </RadzenRow>
+
+    </RadzenTemplateForm>
+
+    @code {
+    [Parameter]
+    public int ID { get; set; }
+    public Enrollment data = new Enrollment();
+    protected bool errorVisible;
+    protected string? errorMessage;
+    protected bool IDVisible = true;
+
+    
+
+    protected IEnumerable<Student> student;
+    protected IEnumerable<Course> course;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        if (ID != 0)
+        {
+            data = await Task.Run(() => dbContext.Enrollments.FirstOrDefaultAsync(c => c.EnrollmentID == ID));
+            IDVisible = false;
+        }
+        student = await Task.Run(() => dbContext.Students.ToList());
+        course = await Task.Run(() => dbContext.Courses.ToList());
+
+    }
+
+    public async Task SaveForm()
+    {
+        try
+        {
+            if (ID != 0)
+            {
+                dbContext.Update(data);
+            }
+            else
+            {
+                dbContext.Add(data);
+            }
+            await dbContext.SaveChangesAsync();
+            DialogService.Close(true);
+        }
+        catch (Exception ex)
+        {
+            dbContext.Entry(data).State = EntityState.Detached;
+            errorVisible = true;
+            errorMessage = ex.Message + " InnerException: " + ex.InnerException.Message;
+        }
+    }
+
+    public void Close()
+    {
+        DialogService.Close();
+    }
 }

@@ -7,13 +7,13 @@
 
 <RadzenAlert Shade="Shade.Lighter" Variant="Variant.Flat" Size="AlertSize.Small" AlertStyle="AlertStyle.Danger" Visible="@errorVisible">@errorMessage</RadzenAlert>
 
-<RadzenTemplateForm TItem="Student" Data="@student" Submit="SaveForm">
+    <RadzenTemplateForm TItem="Student" Data="@data" Submit="SaveForm">
     <RadzenFieldset Text="Osnovni podaci">
         <RadzenRow AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center" RowGap="1rem">
             <RadzenColumn Size="12">
                 <RadzenFormField Text="Prezime" Style="width: 100%">
                     <ChildContent>
-                        <RadzenTextBox Name="ImeTextBox" @bind-Value="student.LastName" />
+                            <RadzenTextBox Name="ImeTextBox" @bind-Value="data.LastName" />
                     </ChildContent>
                     <Helper>
                         <RadzenLengthValidator Component="ImeTextBox" Text="predugačako (max 50 karaktera)" Max="50" />
@@ -23,7 +23,7 @@
             <RadzenColumn Size="12">
                 <RadzenFormField Text="Ime" Style="width: 100%">
                     <ChildContent>
-                        <RadzenTextBox Name="PrezimeTextBox" @bind-Value="student.FirstMidName" />
+                            <RadzenTextBox Name="PrezimeTextBox" @bind-Value="data.FirstMidName" />
                     </ChildContent>
                     <Helper>
                         <RadzenLengthValidator Component="PrezimeTextBox" Text="predugačako (max 50 karaktera)" Max="50" />
@@ -47,8 +47,7 @@
     @code {
     [Parameter]
     public int ID { get; set; }
-    public Student student = new Student();
-    string Title = "Add";
+    public Student data = new Student();
     protected bool errorVisible;
     protected string? errorMessage;
 
@@ -57,8 +56,7 @@
         await base.OnInitializedAsync();
         if (ID != 0)
         {
-            Title = "Edit";
-            student = await Task.Run(() => dbContext.Students.FirstOrDefaultAsync(c => c.ID == ID));
+            data = await Task.Run(() => dbContext.Students.FirstOrDefaultAsync(c => c.ID == ID));
         }
     }
 
@@ -68,18 +66,18 @@
         {
             if (ID != 0)
             {
-                dbContext.Students.Update(student);
+                dbContext.Update(data);
             }
             else
             {
-                await dbContext.Students.AddAsync(student);
+                dbContext.Add(data);
             }
             await dbContext.SaveChangesAsync();
             DialogService.Close(true);
         }
         catch (Exception ex)
         {
-            dbContext.Entry(student).State = EntityState.Detached;
+            dbContext.Entry(data).State = EntityState.Detached;
             errorVisible = true;
             errorMessage = ex.Message + " InnerException: " + ex.InnerException.Message;
         }

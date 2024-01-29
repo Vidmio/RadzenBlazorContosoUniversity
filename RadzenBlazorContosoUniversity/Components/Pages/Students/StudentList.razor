@@ -19,9 +19,9 @@
         <RadzenDataGridColumn TItem="Student" Property="LastName" Title="First Name" Frozen="true" Width="160px" />
         <RadzenDataGridColumn TItem="Student" Property="FirstMidName" Title="Last Name" Width="160px" />
         <RadzenDataGridColumn TItem="Student" Width="80px" TextAlign="TextAlign.End" Filterable="false" Sortable="false" Pickable="false">
-            <Template Context="student">
-                <RadzenButton ButtonType="ButtonType.Button" ButtonStyle="ButtonStyle.Primary" Icon="edit" Size="ButtonSize.ExtraSmall" Click="@(() => ShowUpdateForm(student))" />
-                <RadzenButton ButtonType="ButtonType.Button" ButtonStyle="ButtonStyle.Secondary" Icon="delete" Size="ButtonSize.ExtraSmall" Click="@(() => Delete(student))" />
+            <Template >
+                <RadzenButton ButtonType="ButtonType.Button" ButtonStyle="ButtonStyle.Primary" Icon="edit" Size="ButtonSize.ExtraSmall" Click="@(() => ShowUpdateForm(context))" />
+                <RadzenButton ButtonType="ButtonType.Button" ButtonStyle="ButtonStyle.Secondary" Icon="delete" Size="ButtonSize.ExtraSmall" Click="@(() => Delete(context))" />
             </Template>
         </RadzenDataGridColumn>
     </Columns>
@@ -36,7 +36,7 @@
     {
         await base.OnInitializedAsync();
 
-        students = dbContext.Students.AsNoTracking();
+        students = dbContext.Students;//.AsNoTracking();
     }
 
     public async Task ShowInsertForm()
@@ -46,27 +46,27 @@
         {
             if (x)
             {
-                NotificationService.Notify(NotificationSeverity.Success, "Uspešno", "Uspešno sačuvan", 5000);
+                NotificationService.Notify(NotificationSeverity.Success, "Uspešno", "Uspešno sačuvan", 3000);
             }
             else
             {
-                NotificationService.Notify(NotificationSeverity.Error, "Greška", "Greška prilikom dodavanja", 5000);
+                NotificationService.Notify(NotificationSeverity.Error, "Greška", "Greška prilikom dodavanja", 3000);
             }
         }
         await Grid.Reload();
     }
 
-    public async void ShowUpdateForm(Student student)
+    public async void ShowUpdateForm(Student obj)
     {
         dynamic x = await DialogService.OpenAsync<StudentForm>("Edit", new Dictionary<string, object>()
         {
-            {"Id",student.ID}
+            {"Id",obj.ID}
         });
         if (x != null && x is bool)
         {
             if (x)
             {
-                NotificationService.Notify(NotificationSeverity.Success, "Uspešno", "Izmene uspešno izvrsene", 5000);
+                NotificationService.Notify(NotificationSeverity.Success, "Uspešno", "Izmene uspešno izvrsene");
             }
             else
             {
